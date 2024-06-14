@@ -161,6 +161,15 @@ export const parseL3CompoundCExp = (op: Sexp, params: Sexp[]): Result<CExp> =>
     isString(op) && isSpecialForm(op) ? parseL3SpecialForm(op, params) :
     parseAppExp(op, params);
 
+export const parseClassExp = (params: Sexp[]): Result<CExp> =>
+    params.length !== 2 ? makeFailure(`Expression is not of the form (class (<var>+ <binding>+)): ${format(params)}`) :
+        isArray (params[0]) && isGoodBindings (params[1]) ?
+            mapv(
+                mapv(mapResult(parseL3CExp, map(second, params[1] as [string, Sexp][])),
+                    (vals: CExp[]) : Binding[] => zipWith(makeBinding, map(b => b[0], params[1] as [string, Sexp][]), vals)),
+                    (bindings: Binding[]) : ClassExp => makeClassExp(map(makeVarDecl, params[0] as string[]), bindings))
+            makeFailure(`Invalid vars or bindings: \nvars ${format(params[0])} \nbindings: ${format(params[1])}`); //We added
+
 export const parseL3SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     isEmpty(params) ? makeFailure("Empty args for special form") :
     op === "if" ? parseIfExp(params) :
