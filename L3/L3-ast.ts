@@ -320,10 +320,11 @@ const unparseProcExp = (pe: ProcExp): string =>
 const unparseLetExp = (le: LetExp) : string => 
     `(let (${map((b: Binding) => `(${b.var.var} ${unparseL3(b.val)})`, le.bindings).join(" ")}) ${unparseLExps(le.body)})`
 
-const unparseClassExp = (exp: ClassExp): string =>
-    `(class (${map((p: VarDecl) => p.var, exp.fields).join(" ")}) ${(zipWith((name: Exp, expression: CExp) => 
-        (unparseL3(name), unparseL3(expression)), map((x: Binding) => x.var as unknown as Exp, exp.methods), map((x: Binding) => 
-            x.val, exp.methods)).join(", "))})`
+const unparseClassExp = (exp: ClassExp): string => 
+    `(class (${map((field: VarDecl) => field.var, exp.fields).join(" ")}) (${map((method: Binding) => 
+        `(${(method.var as unknown as VarDecl).var} ${unparseL3(method.val)})`, exp.methods).join(" ")}))`;
+
+
 
 export const unparseL3 = (exp: Program | Exp): string =>
     isBoolExp(exp) ? valueToString(exp.val) :
