@@ -182,6 +182,9 @@ export const parseL3SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     op === "quote" ? 
         isNonEmptyList<Sexp>(params) ? parseLitExp(first(params)) :
         makeFailure(`Bad quote exp: ${params}`) :
+    op === "class" ? //We added
+        isNonEmptyList<Sexp>(params) ? parseClassExp(params) :
+        makeFailure(`Bad quote exp: ${params}`) :
     makeFailure("Never");
 
 // DefineExp -> (define <varDecl> <CExp>)
@@ -224,7 +227,7 @@ const isPrimitiveOp = (x: string): boolean =>
      "number?", "boolean?", "symbol?", "string?"].includes(x);
 
 const isSpecialForm = (x: string): boolean =>
-    ["if", "lambda", "let", "quote"].includes(x);
+    ["if", "lambda", "let", "quote", "class"].includes(x); //We added 'class'
 
 const parseAppExp = (op: Sexp, params: Sexp[]): Result<AppExp> =>
     bind(parseL3CExp(op), (rator: CExp) => 
