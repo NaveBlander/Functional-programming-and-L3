@@ -47,8 +47,8 @@ import { Sexp, Token } from "s-expression";
 
 export type Exp = DefineExp | CExp;
 export type AtomicExp = NumExp | BoolExp | StrExp | PrimOp | VarRef;
-export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp;
-export type CExp =  AtomicExp | CompoundExp | ClassExp;
+export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | ClassExp;
+export type CExp =  AtomicExp | CompoundExp;
 
 export type Program = {tag: "Program"; exps: Exp[]; }
 export type DefineExp = {tag: "DefineExp"; var: VarDecl; val: CExp; }
@@ -122,7 +122,7 @@ export const isAtomicExp = (x: any): x is AtomicExp =>
     isNumExp(x) || isBoolExp(x) || isStrExp(x) ||
     isPrimOp(x) || isVarRef(x);
 export const isCompoundExp = (x: any): x is CompoundExp =>
-    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x);
+    isAppExp(x) || isIfExp(x) || isProcExp(x) || isLitExp(x) || isLetExp(x) || isClassExp(x);
 export const isCExp = (x: any): x is CExp =>
     isAtomicExp(x) || isCompoundExp(x);
 
@@ -156,19 +156,10 @@ export const parseL3CompoundExp = (op: Sexp, params: Sexp[]): Result<Exp> =>
     op === "define"? parseDefine(params) :
     parseL3CompoundCExp(op, params);
 
-// CompoundCExp -> IfExp | ProcExp | LetExp | LitExp | AppExp
+// CompoundCExp -> IfExp | ProcExp | LetExp | LitExp | AppExp | ClassExp
 export const parseL3CompoundCExp = (op: Sexp, params: Sexp[]): Result<CExp> =>
     isString(op) && isSpecialForm(op) ? parseL3SpecialForm(op, params) :
     parseAppExp(op, params);
-
-export const parseClassExp = (params: Sexp[]): Result<CExp> =>
-    params.length !== 2 ? makeFailure(`Expression is not of the form (class (<var>+ <binding>+)): ${format(params)}`) :
-        isArray (params[0]) && isGoodBindings (params[1]) ?
-            mapv(
-                mapv((mapResult(parseL3CExp, map(second, params[1] as [string, Sexp][]))), // params[1] is: Binding[]. so map(second, ...) returns list of all 'functions' of the class
-                    (vals: CExp[]) : Binding[] => zipWith(makeBinding, map(b => b[0], params[1] as [string, Sexp][]), vals)),
-                    (bindings: Binding[]) : ClassExp => makeClassExp(map(makeVarDecl, params[0] as string[]), bindings)) :
-            makeFailure(`Invalid vars or bindings: \nvars ${format(params[0])} \nbindings: ${format(params[1])}`); //We added
 
 export const parseL3SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     isEmpty(params) ? makeFailure("Empty args for special form") :
@@ -182,9 +173,8 @@ export const parseL3SpecialForm = (op: Sexp, params: Sexp[]): Result<CExp> =>
     op === "quote" ? 
         isNonEmptyList<Sexp>(params) ? parseLitExp(first(params)) :
         makeFailure(`Bad quote exp: ${params}`) :
-    op === "class" ? //We added
-        isNonEmptyList<Sexp>(params) ? parseClassExp(params) :
-        makeFailure(`Bad quote exp: ${params}`) :
+    op === "class" ? parseClassExp(params) :
+        // isNonEmptyList<Sexp>(params) ? parseClassExp(params) :
     makeFailure("Never");
 
 // DefineExp -> (define <varDecl> <CExp>)
@@ -243,6 +233,23 @@ const parseProcExp = (vars: Sexp, body: Sexp[]): Result<ProcExp> =>
     isArray(vars) && allT(isString, vars) ? mapv(mapResult(parseL3CExp, body), (cexps: CExp[]) => 
                                                  makeProcExp(map(makeVarDecl, vars), cexps)) :
     makeFailure(`Invalid vars for ProcExp ${format(vars)}`);
+
+// const parseClassExp = (fields: Sexp, methods: Sexp[]): Result<ClassExp> =>
+//     isArray(fields) && allT(isString, fields) ? mapv(makeOk(zipWith(makeBinding, map(makeVarDecl, map(first, map(first, methods) as string[])),
+//                                                              (map(parseL3CExp, map(second, methods as [string, Sexp][]))))),
+//                                                      (bindings: Binding[]) => makeClassExp(map(makeVarDecl, fields), bindings)) :
+//     makeFailure(`Invalid vars for ClassExp ${format(fields)}`);
+
+// Added by
+export const parseClassExp = (params: Sexp[]): Result<CExp> =>
+    params.length !== 2 ? makeFailure(`Expression is not of the form (class (<var>+ <binding>+)): ${format(params)}`) :
+        isArray (params[0]) && isGoodBindings (params[1]) ?
+            mapv(
+                mapv((mapResult(parseL3CExp, map(second, params[1] as [string, Sexp][]))),
+                    (vals: CExp[]) : Binding[] => zipWith(makeBinding, map(b => b[0], params[1] as [string, Sexp][]), vals)),
+                    (bindings: Binding[]) : ClassExp => makeClassExp(map(makeVarDecl, params[0] as string[]), bindings)) :
+            makeFailure(`Invalid vars or bindings: \nvars ${format(params[0])} \nbindings: ${format(params[1])}`); //We added
+
 
 const isGoodBindings = (bindings: Sexp): bindings is [string, Sexp][] =>
     isArray(bindings) &&

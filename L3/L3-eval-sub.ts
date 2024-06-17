@@ -8,7 +8,7 @@ import { isAppExp, isBoolExp, isDefineExp, isIfExp, isLitExp, isNumExp,
 import { makeBoolExp, makeLitExp, makeNumExp, makeProcExp, makeStrExp } from "./L3-ast";
 import { parseL3Exp } from "./L3-ast";
 import { applyEnv, makeEmptyEnv, makeEnv, Env } from "./L3-env-sub";
-import { isClosure, makeClosure, Closure, Value, makeClassValue, isClassValue, ClassValue, isObjectValue} from "./L3-value"; //We added the last 2
+import { isClosure, makeClosure, Closure, Value, makeClassValue, isClassValue, ClassValue, isObjectValue, makeObjectValue} from "./L3-value"; //We added the last 2
 import { first, rest, isEmpty, List, isNonEmptyList } from '../shared/list';
 import { isBoolean, isNumber, isString } from "../shared/type-predicates";
 import { Result, makeOk, makeFailure, bind, mapResult, mapv } from "../shared/result";
@@ -39,6 +39,7 @@ const L3applicativeEval = (exp: CExp, env: Env): Result<Value> =>
                                 L3applyProcedure(rator, rands, env))) :
     isLetExp(exp) ? makeFailure('"let" not supported (yet)') :
     isClassExp(exp) ? evalClass(exp, env) : //Added by us
+    isObjectValue(exp) ? evalObject(exp, env) : //Added by us
     makeFailure('Never');
 
 export const isTrueValue = (x: Value): boolean =>
@@ -58,8 +59,11 @@ const L3applyProcedure = (proc: Value, args: Value[], env: Env): Result<Value> =
     makeFailure(`Bad procedure ${format(proc)}`);
 
 // Added by us
-const evalClass = (exp: ClassExp, env: Env): Result<Value> =>
-    makeOk(makeClassValue(exp.fields, exp.methods));
+const evalClass = (exp: ClassExp, env: Env): Result<Object> =>
+    makeOk(makeObjectValue(makeClassValue(exp.fields, exp.methods), exp.fields));
+
+// Added by us
+const evalObject = (exp: ObjectExp)
 
 // Applications are computed by substituting computed
 // values into the body of the closure.
@@ -71,8 +75,7 @@ const valueToLitExp = (v: Value): NumExp | BoolExp | StrExp | LitExp | PrimOp | 
     isString(v) ? makeStrExp(v) :
     isPrimOp(v) ? v :
     isClosure(v) ? makeProcExp(v.params, v.body) :
-    isClassValue(v) ? makeClassExp(v.fields, v.methods) :
-    isObjectValue(v) ? makeObjectExp (v) :
+    isObjectValue(v) ? makeClassExp() (v) :
     makeLitExp(v);
 
 const applyClosure = (proc: Closure, args: Value[], env: Env): Result<Value> => {

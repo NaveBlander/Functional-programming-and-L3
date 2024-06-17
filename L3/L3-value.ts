@@ -1,16 +1,13 @@
 // ========================================================
 // Value type definition for L4
 
-import { map} from "ramda"; //Added by us
-import { isPrimOp, CExp, PrimOp, VarDecl, ClassExp, isClassExp, Binding } from './L3-ast';
+import { isPrimOp, CExp, PrimOp, VarDecl } from './L3-ast';
 import { Env, makeEmptyEnv } from './L3-env-env';
 import { append } from 'ramda';
 import { isArray, isNumber, isString } from '../shared/type-predicates';
-import exp from 'constants';
-import { cons } from '../shared/list';
 
 
-export type Value = SExpValue | ClassValue | ObjectValue; //class and object added by us
+export type Value = SExpValue;
 
 export type Functional = PrimOp | Closure;
 export const isFunctional = (x: any): x is Functional => isPrimOp(x) || isClosure(x);
@@ -29,28 +26,6 @@ export const makeClosure = (params: VarDecl[], body: CExp[]): Closure =>
 export const makeClosureEnv = (params: VarDecl[], body: CExp[], env: Env): Closure =>
     ({tag: "Closure", params: params, body: body, env: env});
 export const isClosure = (x: any): x is Closure => x.tag === "Closure";
-
-// ========================================================
-// Class, added by us
-export type ClassValue = {
-    tag: "Class";
-    fields: VarDecl[];
-    methods: Binding[];
-}
-export const makeClassValue = (fields: VarDecl[], methods: Binding[]): ClassValue =>
-    ({tag: "Class", fields: fields, methods: methods});
-export const isClassValue = (x: any): x is ClassValue => x.tag === "Class";
-
- // ========================================================
-// Object, , added by us
-export type ObjectValue = {
-    tag: "Object";
-    class: ClassValue;
-    fieldValues: Value[];
-}
-export const makeObjectValue = (cls: ClassValue, fieldValues: Value[]): ObjectValue =>
-    ({tag: "Object", class: cls, fieldValues: fieldValues});
-export const isObjectValue = (x: any): x is ObjectValue => x.tag === "Object";
 
 // ========================================================
 // SExp
@@ -101,14 +76,6 @@ export const compoundSExpToString = (cs: CompoundSExp, css = compoundSExpToArray
     isArray(css) ? `(${css.join(' ')})` :
     `(${css.s1.join(' ')} . ${css.s2})`
 
-// Added by us
-export const classToString = (val: ClassValue) : string =>
-    `<Class ${map((f: VarDecl) => f.var, val.fields).join(' ')}`
-
-// Added by us
-export const objectToString = (val: ObjectValue) : string =>
-    `<Object ${val.class.tag} ${(map(fieldValue => valueToString(fieldValue), val.fieldValues).join(' '))}>`
-
 export const valueToString = (val: Value): string =>
     isNumber(val) ?  val.toString() :
     val === true ? '#t' :
@@ -119,6 +86,4 @@ export const valueToString = (val: Value): string =>
     isSymbolSExp(val) ? val.val :
     isEmptySExp(val) ? "'()" :
     isCompoundSExp(val) ? compoundSExpToString(val) :
-    isClassValue(val) ? classToString(val) : //Added by us
-    isObjectValue(val) ? objectToString(val) : //Added by us
     val;
