@@ -20,15 +20,6 @@ const makeProcBody : (methods: Binding[], index: number) => CExp = (methods, ind
         makeIfExp(makeAppExp(makePrimOp("eq?"), [makeVarRef("msg"), makeLitExp({tag: "SymbolSExp", val: methods[index].var.var})]),
                   makeAppExp(methods[index].val, []),
                   makeProcBody(methods, index+1));
-    
-
-// const makeBody = (msg: VarDecl): CExp => {
-//     return makeProcExp(___, makeEmptyProc(msg));
-// }
-
-// const makeEmptyProc = (msg: VarDecl): CExp[] => {
-
-// }
 
 /*
 Purpose: Transform all class forms in the given AST to procs
