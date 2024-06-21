@@ -1,8 +1,6 @@
 import { ClassExp, ProcExp, Exp, Program, makeProcExp, CExp, Binding, VarDecl, makeIfExp, makeVarDecl, makeBoolExp, makeAppExp, makePrimOp, makeVarRef, makeLitExp, isExp, isDefineExp, isProgram, makeProgram, isCExp, makeDefineExp, isAtomicExp, isLitExp, isIfExp, isAppExp, isProcExp, isLetExp, makeLetExp, makeBinding, isClassExp } from "./L3-ast";
 import { Result, makeFailure, makeOk } from "../shared/result";
-import { makeCompoundSExp } from "./L3-value";
 import { __, map } from "ramda";
-import exp from "constants";
 
 /*
 Purpose: Transform ClassExp to ProcExp
@@ -21,15 +19,6 @@ const makeProcBody : (methods: Binding[], index: number) => CExp = (methods, ind
                   makeAppExp(methods[index].val, []),
                   makeProcBody(methods, index+1));
     
-
-// const makeBody = (msg: VarDecl): CExp => {
-//     return makeProcExp(___, makeEmptyProc(msg));
-// }
-
-// const makeEmptyProc = (msg: VarDecl): CExp[] => {
-
-// }
-
 /*
 Purpose: Transform all class forms in the given AST to procs
 Signature: lexTransform(AST)
