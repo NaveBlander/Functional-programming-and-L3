@@ -10,28 +10,28 @@ import { allT, first, rest, isEmpty, isNonEmptyList } from "../shared/list";
 import { Result, makeOk, makeFailure, bind, mapResult } from "../shared/result";
 import { parse as p } from "../shared/parser";
 import { format } from "../shared/format";
+import exp from "constants";
 
 // ========================================================
 // Eval functions
 
 const L3applicativeEval = (exp: CExp, env: Env): Result<Value> =>
-  isNumExp(exp)? makeOk(exp.val) :
-  isBoolExp(exp)? makeOk(exp.val) :
-  isStrExp(exp)? makeOk(exp.val) : 
-  isPrimOp(exp)? makeOk(exp) :
-  isVarRef(exp)? applyEnv(env, exp.var) :
-  isLitExp(exp)? makeOk(exp.val) :
-  isIfExp(exp)? evalIf(exp, env) :
-  isProcExp(exp)? evalProc(exp, env) :
-  isLetExp(exp)? evalLet(exp, env) :
-  isAppExp(exp) ? bind(L3applicativeEval(exp.rator, env),
-                    (proc: Value) =>
-                      bind(mapResult((rand: CExp) => 
-                        L3applicativeEval(rand, env), exp.rands),
-                            (args: Value[]) =>
-                              L3applyProcedure(proc, args))) :
-  isClassExp(exp)? evalClass(exp, env) : 
-  makeFailure('"let" not supported (yet)');
+    isNumExp(exp) ? makeOk(exp.val) : 
+    isBoolExp(exp) ? makeOk(exp.val) :
+    isStrExp(exp) ? makeOk(exp.val) :
+    isPrimOp(exp) ? makeOk(exp) :
+    isVarRef(exp) ? applyEnv(env, exp.var) :
+    isLitExp(exp) ? makeOk(exp.val) :
+    isIfExp(exp) ? evalIf(exp, env) :
+    isProcExp(exp) ? evalProc(exp, env) :
+    isAppExp(exp) ? bind(L3applicativeEval(exp.rator, env), (rator: Value) =>
+                        bind(mapResult(param => 
+                            L3applicativeEval(param, env), 
+                              exp.rands), 
+                            (rands: Value[]) =>
+                                L3applyProcedure(rator, rands, env))) :
+    isLetExp(exp) ? makeFailure('"let" not supported (yet)') :
+    makeFailure('Never');
 
 export const isTrueValue = (x: Value): boolean =>
   ! (x === false);
@@ -53,7 +53,19 @@ const L3applyProcedure = (proc: Value, args: Value[]): Result<Value> =>
   isObject(proc) ? applyObject(proc, args) :
   makeFailure(`Bad procedure ${format(proc)}`);
 
-  const applyClosure = (proc: Closure, args: Value[]): Result<Value> => {
+// Applications are computed by substituting computed
+// values into the body of the closure.
+// To make the types fit - computed values of params must be
+// turned back in Literal Expressions that eval to the computed value.
+const valueToLitExp = (v: Value): NumExp | BoolExp | StrExp | LitExp | PrimOp | ProcExp =>
+    isNumber(v) ? makeNumExp(v) :
+    isBoolean(v) ? makeBoolExp(v) :
+    isString(v) ? makeStrExp(v) :
+    isPrimOp(v) ? v :
+    isClosure(v) ? makeProcExp(v.params, v.body) :
+    makeLitExp(v);
+
+const applyClosure = (proc: Closure, args: Value[], env: Env): Result<Value> => {
     const vars = map((v: VarDecl) => v.var, proc.params);
     return evalSequence(proc.body, makeExtEnv(vars, args, proc.env));
 }
