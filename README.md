@@ -51,15 +51,18 @@ This project implements various utilities and functions in TypeScript for L3 lan
    ```sh
    npm install
 
-## Build
+## Build 
 
-**Compile TypeScript to JavaScript:**
-
-```sh
+**Compile TypeScript to JavaScript:** 
+```sh 
 npm run build
+```
 
 ### Test
+
 **Run tests:**
+
 ```sh
 npm test
+```
 
