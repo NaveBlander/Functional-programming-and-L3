@@ -49,13 +49,13 @@ This project implements various utilities and functions in TypeScript for L3 lan
    cd Functional-programming-and-L3
 2. **Install dependencies:**
    ```sh
-   npm
+   npm install
    
 ### Build
 
 **Compile TypeScript to JavaScript:**
   '''sh
-  npm run build
+   npm run build
   
 ### Testing:**
 
