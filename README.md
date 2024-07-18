@@ -50,9 +50,16 @@ This project implements various utilities and functions in TypeScript for L3 lan
 2. **Install dependencies:**
    ```sh
    npm install
-   
-### Build
+
+## Build
 
 **Compile TypeScript to JavaScript:**
-   ```sh
-   npm run build
+
+```sh
+npm run build
+
+### Test
+**Run tests:**
+```sh
+npm test
+
